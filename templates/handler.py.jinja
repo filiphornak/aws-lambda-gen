@@ -1,0 +1,8 @@
+import {{ package|default(name) }} as p
+
+
+def handle(event, context):
+    return {
+        "statusCode": 200,
+        "message": p.greet(event["Name"])
+    }

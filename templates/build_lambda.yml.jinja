@@ -1,0 +1,79 @@
+name: Continuous Integration of {{ name }} Lambda
+{%- if project_path not in [".", "./", ""] %}
+on:
+  push:
+    paths:
+      - {{ project_path }}/**
+      - .github/workflows/build_{{ name }}_lambda.yml
+
+defaults:
+  run:
+    working-directory: {{ project_path }}
+{%- else %}
+on: push
+{%- endif %}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: extractions/setup-just@v1
+        with:
+          just-version: '1.4.0'
+      - name: Set up Python {{ python_version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: {{ python_version }}
+
+      - name: Load cached Poetry Binary
+        id: cached-poetry
+        uses: actions/cache@v3
+        with:
+          path: ~/.local
+          key: poetry-0
+      - name: Install and configure Poetry
+        if: steps.cached-poetry.outputs.cache-hit != 'true'
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.3.2
+          virtualenvs-create: true
+          virtualenvs-in-project: false
+      
+      - name: Create fake AWS credentials
+        run: |
+          mkdir -p ~/.aws
+          echo "[default]" > ~/.aws/credentials
+          echo "aws_access_key_id = testing" >> ~/.aws/credentials
+          echo "aws_secret_access_key = testing" >> ~/.aws/credentials
+  
+      - name: Load cached venv
+        id: cached-pip-wheels
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('{{ project_path }}/poetry.lock') }}
+      - name: Poetry prepare test environment 
+        if: steps.cached-pip-wheels.outputs.cache-hit != 'true'
+        run: just prepare-dev
+
+      - name: Check formatting using Black formatter
+        run: just format-check
+      - name: Lint with ruff
+        run: just ruff
+      - name: Lint with mypy
+        run: just types
+      - name: Run pylint linter
+        run: just pylint
+      - name: Test with pytest
+        run: just test-cov
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: {% if project_path -%}
+          {{ project_path }}/coverage.xml
+          {%- else -%}
+          coverage.xml
+          {%- endif %}
+          junitxml-path: {{ project_path }}/pytest.xml

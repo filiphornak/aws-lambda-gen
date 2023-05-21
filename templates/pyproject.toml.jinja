@@ -1,0 +1,146 @@
+{{ pyproject_toml_content }}
+
+
+[tool.ruff]
+select = [
+    "F",   # Enable pyflakes checks
+    "E",   # Eanble pycodestyle errors
+    "W",   # Enable pycodestyle warnings
+    "B",   # Enable bugbear checks, e.g. assert-false, or useless-comparision
+    "C4",  # Enable for-comprehention checks
+    "C90", # Enable mccable complexity check
+    "I",   # Enable isort ipmort order check
+    "N",   # Enable flake8 naming checks
+    "D",   # Enable docstring checks (pydocstyle)
+    "UP",  # Enable deprecated python construct checks
+    "S",   # Enable bandit security checks
+    "BLE", # Enable blind-except checks, i.e. excepts without exception type
+    "A",   # Enable built in shadowing checks
+    "COM", # Enable comma checks, e.g. prohibited-trailing-comma
+    "DTZ", # Enable datetime timezone checks
+    "ISC", # Enable implicit string concat checks
+    "G",   # Enable logging format checks
+    "PIE", # Enable pie checks, e.g. unnecessary-pass, or non-unique-enums
+    "PT",  # Enable pytest checks
+    "SIM", # Enable simplify checks with quick fixes, e.g collapsible-if
+    "TID", # Enable tidy-imports checks, e.g. relative-imports
+    "ARG", # Enable unusued arguments checks
+    "ERA", # Enale eradicate quick fix, i.e. removes commented out code
+    "PGH", # Emable pygrep-hooks checks, e.g. eval
+    "PL",  # Enable some of the pylint checks
+]
+ignore = [
+    "D100",    # Ignore docstrings for public modules
+    "D101",    # Ignore docstrings for public classes
+    "D102",    # Ignore docstrings for public methods
+    "D103",    # Ignore docstrings for public functions
+    "D104",    # Ignore docstrings for public packages
+    "D105",    # Ignore docstrings for magick methods (e.g. __shl__)
+    "D106",    # Ignore docstrings for public nested classes   
+    "D107",    # Ignore docstrings for __init__ methods
+    "D401",    # Ignore first line in non-imperative-mood
+    "W505",    # Dont enforece doc line length
+    "PLR2004", # Ignore magic-value-comparision
+    "COM812",  # Trailing comma missing
+]
+ignore-init-module-imports = true
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+target-version = "{{ python_version|to_py_version }}"
+
+fix = true
+
+[tool.ruff.per-file-ignores]
+"tests/test_*.py" = [
+    "S101", # Disable bandit assert checks for test files
+]
+{%- if has_integration %}
+"integration/test_*.py" = ["S101"]
+{%- endif %}
+"{{ group_name|default(name) }}/**/*.py" = [
+    "PT", # Disable pytest checks for source files
+]
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.ruff.pydocstyle]
+convention = "numpy"
+
+[tool.mypy]
+namespace_packages = true
+packages = "{{ package }}"
+{%- if has_stubs %}
+mypy_path = "./typings"
+{% endif %}
+
+python_version = "{{ python_version }}"
+platform = "linux"
+
+# options taken from --strict flag. Docs: https://mypy.readthedocs.io/en/stable/config_file.htm
+warn_unused_configs = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = false
+disallow_untyped_defs = true
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+implicit_reexport = false
+strict_equality = true
+strict_concatenate = true
+
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = "C0111,C0114,W0613"
+
+[tool.pytest.ini_options]
+addopts = "-vv"
+testpaths = ["tests"{% if has_integration %}, "integration"{% endif %}]
+python_files = "test_*.py"
+python_functions = "test_*"
+
+[tool.coverage.run]
+parallel = true
+
+[tool.coverage.report]
+skip_empty = true
+show_missing = true
+skip_covered = true
+include = ["{{ group_name|default(name) }}/*"]
+omit = [
+    ".tox/*",
+    ".venv/*",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+    "*__pycache__*",
+    "*.pyc",
+]

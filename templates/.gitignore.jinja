@@ -1,0 +1,33 @@
+*
+
+# Allow every subdirectory, so we can recurse into them
+!*/
+
+# Except for
+!Justfile
+!README.md
+# If you want to write your changes in CHGAGELOG.md instead of github releases, pleas uncomment following line
+# !CHANGELOG.md
+!pyproject.toml
+!poetry.lock
+!.gitignore
+!.pre-commit
+
+# vscode lauch opts for debugging tests
+!.vscode/launch.json
+!.vscode/settings.json
+
+# source files
+{%- if group_name %}
+!{{ name }}.py
+!{{ group_name }}/**/*.py
+{%- else %}
+!lambda.py
+!{{ name }}/**/*.py
+{%- endif %}
+!tests/**/*.py
+# If you inted to use separate directory for integration tests, feel free to uncomment following line
+# !integration/**/*.py
+
+# If you wish to generate and upload stub files to git uncomment the following line
+# !typings/{{ group_name|default(name) }}/**/*.pyi

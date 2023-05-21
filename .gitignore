@@ -1,0 +1,14 @@
+# Ignore everything
+*
+
+# Except direcotires to enable recursing through directory tree
+!*/
+
+# And these files
+!.gitignore
+!Justfile
+!README.md
+!CHANGELOG.md
+!templates/**/*.jinja
+!tempaltes/**/*.py
+!templates/CHANGELOG.md
