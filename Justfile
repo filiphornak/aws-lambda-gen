@@ -37,8 +37,8 @@ _lambda_name := if package == name {
     snakecase(name) + ".py"
 }
 
-[unix]
 # Installs lambda-spinup project, i.e. it will create virtualenv with all dependencies
+[unix]
 install:
     #!/usr/bin/env sh -euo pipefail
     echo "Checking if all required dependencies are installed ..."
@@ -67,30 +67,25 @@ install:
     echo "Installing dependencies to {{ _vpy }} ..."
     {{ _vpy }} -m pip install -U setuptools pip wheel jinja2
 
-[unix]
 # Uninstalls lambad-spinput project, i.e. removes virtualenv
+[unix]
 uninstall:
     @echo "Removing virtual environment ..."
     @rm -rf {{ _venv }}
     @echo "Virtualenv removed sucessfully"
 
 
-[unix]
-test:
-    @echo "Current DIR is $PWD"
-    @echo "But it was called from {{ _dest }}"
-
-
 [private]
 create-project:
-    #!/usr/bin/env sh -eu
-    if [ "{{ name }}" -eq "" ]; then
-        echo "Usage: lambda-spiup new-lambda name='lambda' [package='ingestionaas.pipelines.lambda']"
+    #!/usr/bin/env sh
+    set -euo pipefail
+    if [ "{{ name }}" == "" ]; then
+        echo "Usage: lambda-spinup new name='lambda' [package='ingestionaas.pipelines.lambda']"
         exit 1
     fi
     echo "Crearing project '{{ name }}' in '{{ invocation_directory() }}'"
     cd {{ invocation_directory() }}
-    poetry -n new {{ if name == package { name } else { "{{ name }} --name {{ package }}" } }}
+    poetry -n new {{ if name == package { name } else { name + " --name " + package } }}
     cd {{ name }}
     poetry add --group dev \
         pytest \
@@ -105,13 +100,14 @@ create-project:
         mypy
     echo "copying files ..."
     cp -f {{ join(_tmpl, "__init__.py") }} "{{ join("./", _package_path) }}"
-    if [ "{{ changelog }}" -eq "yes" ]; then
+    if [ "{{ changelog }}" == "yes" ]; then
         cp {{ join(_tmpl, "CHANGELOG.md") }} .
     fi
     echo "copying done"
 
-    if [ "{{ git_project }}" -eq "yes" ]; then
+    if [ "{{ git_project }}" == "yes" ]; then
         echo "Checking git project in current directory ..."
+        echo "Is already in git project: {{ _git_exists }}"
         if [ "{{ _git_exists }}" == "no" ]; then
             echo "Initializing git repository ..."
             git init
@@ -145,24 +141,23 @@ render: create-project
     vars = {
         "name": "{{ name }}",
         "package": "{{ package }}",
-        "git_root": GIT_ROOT
-        "py_version": {{ _py_version }},
+        "git_root": GIT_ROOT,
+        "py_version": "{{ _py_version }}",
         "group_name": "{{ _group_name }}",
-        "project_path": RELATIVE_PROJECT_PATH
+        "project_path": RELATIVE_PROJECT_PATH,
         "python_version": "{{ python_version }}",
-        "pypoetry_toml_content": read("pyproject.toml")
+        "pyproject_toml_content": read("pyproject.toml")
     }
 
     if "{{ github_actions }}" == "yes" and "{{ git_project }}" == "yes":
         with open(pth.join(GIT_ROOT, ".github/workflows/lambda_{{ snakecase(name) }}_build.yml"), "w", encoding="utf-8") as fd:
-            fd.write(env.get_tempalte("build_lambda.yml.jinja").render(**vars))
+            fd.write(env.get_template("build_lambda.yml.jinja").render(**vars))
 
     with open(filepath("{{ _lambda_name }}"), "w", encoding="utf-8") as fd:
-        fd.write(env.get_tempalte("handler.py.jinja").render(**vars))
+        fd.write(env.get_template("handler.py.jinja").render(**vars))
 
     template_files = [
         ".gitignore",
-        ".pre-commit",
         "Justfile",
         "README.md",
         "pyproject.toml"
@@ -170,14 +165,14 @@ render: create-project
 
     for gen_file in template_files:
         with open(filepath(gen_file), "w", encoding="utf-8") as fd:
-            fd.write(env.get_tempalte(f"{gen_file}.jinja").render(**vars))
+            fd.write(env.get_template(f"{gen_file}.jinja").render(**vars))
 
-[unix]
 # Creates new AWS Lambda project in current directory, you have to provide at least name="lambda-name"
-new-lambda: render
+[unix]
+new: render
     #!/usr/bin/env sh -euo pipefail
     echo "Lambda project created successfully"
-    echo "Please append {{_lambda_hander}} to include list in {{_dest}}/pypoetry.toml"
+    echo 'Please append "{{ _lambda_name }}" to include list in {{_dest}}/pypoetry.toml'
     echo "If it does not exist, you can create it in [tool.poetry] section."
     echo "It should look like:"
     echo '[tool.poetry]'
@@ -185,4 +180,4 @@ new-lambda: render
     echo 'version = "0.1.0"'
     echo '...'
     echo 'packages = [{ include = "{{ _group_name }}"}]'
-    echo 'include = ["{{ _lambda_handler }}"]'
+    echo 'include = ["{{ _lambda_name }}"]'

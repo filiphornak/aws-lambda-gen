@@ -1,5 +1,5 @@
-sources  := "{{ group_name }} tests"
-python   := {{ python_version }}
+sources  := '{{ group_name }} tests'
+python   := '{{ python_version }}'
 platform := 'manylinux2014_x86_64'
 stubs    := 'typings'
 config   := 'pyproject.toml'
@@ -43,7 +43,7 @@ test-cov-report:
 # Run mypy type checker for provided sources. Docs: https://mypy.readthedocs.io/en/stable/index.html
 types +FILES=sources:
     @echo "Running mypy ..."
-    poetry run mypy --no-incremental --namespace-packages --config-file {{ '{{' }}' config {{ '}}' }}
+    poetry run mypy --no-incremental --namespace-packages --config-file {{ '{{' }} config {{ '}}' }}
     @echo "Runnign mypy on tests ..."
     poetry run mypy --no-incremental --config-file {{ '{{' }} config {{ '}}' }} tests integration
 
@@ -105,7 +105,7 @@ package PLATFORM=platform PYTHON_VERSION=python:
     cd package && zip --recurse-paths --no-dir-entries -X ../artifact.zip . --exclude '*.pyc' '*__pycache__*'
 
 
-create-precommit-hook:
+create-pre-commit-hook:
     #!/usr/bin/env sh -euo pipefail
     ROOT="$(git rev-parse --show-toplevel)"
     cd $ROOT
@@ -115,45 +115,28 @@ create-precommit-hook:
     fi
     GREP="$([ ! command -v rg &>/dev/null ] && echo "rg" || echo "grep")"
     if [ ! $GREP "exec &1>2" .git/hooks/pre-commit ]; then
-        tee -a .git/hooks/pre-commit <<EOT
-
-# Redirecting stdout to stderr
-exec 1>&2
-EOT
+        echo "\n#Redirect stdout to stderr\nexec 1>&2" >> .git/hooks/pre-commit
     fi
     if [ ! $GREP "declare against=HEAD" .git/hooks/pre-commit &>/dev/null ]; then
         echo "Adding against code block in .git/hooks/pre-commit"
 
-        tee -a .git/hooks/pre-commit <<EOT
-
-
-if git rev-parse --verify HEAD >/dev/null 2>&1
-then
-	declare against=HEAD
-else
-	# Initial commit: diff against an empty tree object
-	declare against=$(git hash-object -t tree /dev/null)
-fi
-EOT
+        echo "\nif git rev-parse --verify HEAD >/dev/null 2>&1" >> .git/hooks/pre-commit
+        echo "then\n\tdeclare against=HEAD\nelse" >> .git/hooks/pre-commit
+        echo "\t#Initial commit: diff against an empty tree object" >> .git/hooks/pre-commit
+        echo "\tdeclare against=$(git hash-object -t tree /dev/null)\nfi" >> .git/hooks/pre-commit
     fi
     
     echo "Checking presence of linter exec in .git/hooks/pre-commit ..."
     if [ ! $GREP 'if ! git diff --quiet $against -- {{ project_path }}; then' .git/hooks/pre-commit ]; then
 
         echo "Adding linter executor to pre-commit hook"
-        tee -a .git/hooks/pre-commit <<EOT
-
-# Execute ruff and black linters on change in {{ project_path }}
-if ! git diff --quiet $against -- {{ project_path }}; then
-    echo "Changing directory to: {{ project_path }}"
-    cd {{ project_path }}
-    echo "Running ruff linter"
-    poetry run ruff {{ '{{' }} sources {{ '}}' }}
-    echo "Running formatting check"
-    poetry run black --check {{ '{{' }} sources {{ '}}' }}
-    cd -
-fi
-EOT
+        echo "\n# Execute ruff and black linters on change in {{ project_path }}" >> .git/hooks/pre-commit
+        echo "if ! git diff --quiet $against -- {{ project_path }}; then" >> .git/hooks/pre-commit
+        echo '\techo "Changing directory to: {{ project_path }}"' >> .git/hooks/pre-commit
+        echo '\tcd {{ project_path }}\n' >> .git/hooks/pre-commit 
+        echo '\techo "Running ruff linter"\n\tpoetry run ruff {{ '{{' }} sources {{ '}}' }}' >> .git/hooks/pre-commit
+        echo '\techo "Running formatting check"\n\tpoetry run black --check {{'{{'}} sources {{'}}'}}' >> .git/hooks/pre-commit
+        echo '\tcd -\nfi' >> .git/hooks/pre-commit
     fi
 
 

@@ -12,3 +12,4 @@
 !templates/**/*.jinja
 !tempaltes/**/*.py
 !templates/CHANGELOG.md
+!example/.gitkeep
