@@ -9,6 +9,7 @@
 !Justfile
 !README.md
 !CHANGELOG.md
+!LICENSE
 !templates/**/*.jinja
 !tempaltes/**/*.py
 !templates/CHANGELOG.md

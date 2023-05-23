@@ -4,11 +4,10 @@ SYSTEM_GIT    := 'git'
 
 name           := ''
 package        := name
-python_version := '3.9'
+python_version := '3.10'
 changelog      := 'no'
 git_project    := 'yes'
 github_actions := 'no'
-docker         := 'no'
 
 _group_name:= if package == name {
     name
@@ -25,9 +24,9 @@ _dest := join(invocation_directory(), name)
 _venv := join(justfile_directory(), ".venv")
 _vpy := join(_venv, "bin", file_name(SYSTEM_PYTHON))
 _tmpl := join(justfile_directory(), "templates")
-_git_exists := `[ ! git rev-parse --show-toplevel &>/dev/null ] && echo "yes" || echo "no"`
+_git_exists := `cd {{ invocation_directory() }} && [ ! git rev-parse --show-toplevel &>/dev/null ] && echo "yes" || echo "no"`
 _git_root := if _git_exists == "yes" {
-    `git rev-parse --show-toplevel`
+    `cd {{ invocation_directory() }} && git rev-parse --show-toplevel`
 } else {
     _dest
 }
@@ -171,13 +170,11 @@ render: create-project
 [unix]
 new: render
     #!/usr/bin/env sh -euo pipefail
-    echo "Lambda project created successfully"
-    echo 'Please append "{{ _lambda_name }}" to include list in {{_dest}}/pypoetry.toml'
-    echo "If it does not exist, you can create it in [tool.poetry] section."
-    echo "It should look like:"
-    echo '[tool.poetry]'
-    echo 'name = {{ name }}'
-    echo 'version = "0.1.0"'
-    echo '...'
-    echo 'packages = [{ include = "{{ _group_name }}"}]'
-    echo 'include = ["{{ _lambda_name }}"]'
+    echo "Finalizing project creation ..."
+    cd {{ _dest }}
+    echo 'Changing dependency python version in pyproject.toml to {{ python_version }}'
+    sed -i 's/python = "[^"]+"/python = "{{ python_version }}"/' pyproject.toml
+    echo 'Adding "{{ _lambda_name }}" to include in pyproject.toml'
+    sed -i '/^packages = [{ include = "{{ _group_name }}"}]$/a include = ["{{ _lambda_name }}"]' pyproject.toml
+    cd -
+    echo "Lambda project created successfully in {{ _dest }}"
