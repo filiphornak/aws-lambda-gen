@@ -23,3 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `.pre-commit.jinja` template in favor of `create-pre-commit-hook`.
 - Installed check, because of incosistencies.
+
+### Fixed
+
+- Fix script for determining if actual directory is part of `.git` repository.
