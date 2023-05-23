@@ -24,9 +24,9 @@ _dest := join(invocation_directory(), name)
 _venv := join(justfile_directory(), ".venv")
 _vpy := join(_venv, "bin", file_name(SYSTEM_PYTHON))
 _tmpl := join(justfile_directory(), "templates")
-_git_exists := `cd {{ invocation_directory() }} && [ ! git rev-parse --show-toplevel &>/dev/null ] && echo "yes" || echo "no"`
+_git_exists := `[ ! git rev-parse --show-toplevel &>/dev/null ] && echo "yes" || echo "no"`
 _git_root := if _git_exists == "yes" {
-    `cd {{ invocation_directory() }} && git rev-parse --show-toplevel`
+    `git rev-parse --show-toplevel`
 } else {
     _dest
 }
