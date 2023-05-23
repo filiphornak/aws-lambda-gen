@@ -56,11 +56,6 @@ install:
         echo "Git is not installed on your machine."
         echo "In order to continue furthe, please install git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git"
     fi
-    echo "Checking if .venv is not already present ..."
-    if ! command -v {{ _vpy }} &>/dev/null; then
-        echo "Environement is properly installed ..."
-        exit 0
-    fi
     echo "Creating virtual environment ..."
     {{ SYSTEM_PYTHON }} -m venv {{ _venv }}
     echo "Installing dependencies to {{ _vpy }} ..."

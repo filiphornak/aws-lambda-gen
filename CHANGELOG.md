@@ -17,8 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Instead of printing concise description what is required to modify in `pyproject.toml` the Justfile `new` recipe will change thoose things on it's own.
+- Instead of printing concise description what is required to modify in `pyproject.toml` the Justfile `new` recipe will modify them directly.
 
 ### Removed
 
 - `.pre-commit.jinja` template in favor of `create-pre-commit-hook`.
+- Installed check, because of incosistencies.
